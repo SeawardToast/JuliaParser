@@ -68,6 +68,7 @@ class TokenType(enum.Enum):
 class Token:
 	def getTokenType(self):
 		return self.type
+
 	def getIdName(self):
 		return self.id_name
 	def getIntValue(self):
@@ -192,7 +193,9 @@ def main():
 
 	# create token list
 	tokens = tokenize(src)
-	julia_parser.parse(tokens)
+	parser = julia_parser.Parser(tokens)
+	parsed = parser.parse()
+	parsed.exc()
 	# print token list
 	if outfile != '\0':
 		try:

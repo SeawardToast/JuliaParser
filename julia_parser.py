@@ -9,6 +9,7 @@
 import julia_lexer, enum, sys
 from abc import ABC, abstractmethod
 
+
 class Block:
     def __init__(self):
         self.statements = []
@@ -16,6 +17,13 @@ class Block:
     def add(self, statement):
         if statement is None:
             print("ERROR: Null value exception in Block class.")
+            sys.exit(1);
+        self.statements.append(statement)
+
+    def exc(self):
+        for statement in self.statements:
+            statement.exc()
+
 
 class Statement(ABC):
     @abstractmethod
@@ -29,14 +37,31 @@ class ArithmeticExpression(ABC):
         pass
 
 
-def parse(self, tokens):
-    #just testing the use of the list of tokens passed from julia_lexer
-    for token in tokens:
-        type = token.getTokenType()
-        if type is 0:
-            print("ERROR: invalid character found. Code will not compile")
+class Parser:
+    def __init__(self, tokenlist):
+        global tokens
+        tokens = tokenlist
+
+    def parse(self):
+        statement = self.getStatement()
+
+    def getStatement(self):
+        token = self.seeNextToken()
+        if token.getTokenType() == julia_lexer.TokenType.KEY_IF:
+            statement = self.getIfStatement()
+        
+
+    def getNextToken(self):
+        if not tokens:
+            print("ERROR: IndexOutOfBounds. no more tokens.")
             sys.exit(1)
-        #assignment statement
-        if type is 1:
-            id_name = token.getIdName()
+        return tokens.pop(0)
+    def seeNextToken(self):
+        if not tokens:
+            print("ERROR: IndexOutOFBounds(Parser.SeeNextToken): No more tokens.")
+            sys.exit(1)
+        token = tokens.pop(0)
+        tokens.insert(0, token)
+        return token
+
 
