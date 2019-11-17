@@ -163,35 +163,62 @@ class Parser:
     def parse(self):
         token = self.getNextToken()
         #function keyword
-        if(token.getTokenType()!= 17):
-            print("ERROR: syntax error on line" + (self.size - tokens.len()))
-        token = self.getNextToken()
-        #id value
-        if (token.getTokenType() != 1):
-            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        checkToken(toke.getTokenType, 17) #assert method token type
+        #assert id value possibly
         functionName = token.getIdName()
         token = self.getNextToken()
-        #open par
-        if (token.getTokenType() != 24):
-            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        checkToken(token.getTokenType, 24) #assert open parentheses token type
         token = self.getNextToken()
-        #close par
-        if (token.getTokenType() != 25):
-            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        checkToken(token.getTokenType, 25) #assert closed parentheses token type
+
         block = self.getBlock()
         token = self.getNextToken()
-        if (token.getTokenType() != 23):
-            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        checkToken(token.getTokenType, 23) #assert token end type
         return Program(block)
 
     def getBlock(self):
         block = Block()
         token = self.seeNextToken()
+        while self.isValidStartOfStatement(token):
+            statement = self.getStatement()
+            block.add(statement)
+            token = self.seeNextToken()
+        return block
+
+   def isValidStartOfStatement(self, token):
+       assert (tok is not None)
+       tokType = token.getTokenType()
+       return (tokType == TokenType.ID or
+               tokType == TokenType.KEY_IF or
+               tokType == TokenType.KEY_WHILE or
+               tokType == TokenType.KEY_PRINT or
+               tokType == TokenType.KEY_FOR)
+
+    
+
 
     def getStatement(self):
         token = self.seeNextToken()
-        if token.getTokenType() == julia_lexer.TokenType.KEY_IF:
+        tokType = token.getTokenType()
+        if tokType == julia_lexer.TokenType.KEY_IF:
             statement = self.getIfStatement()
+        if tokType == julia_lexer.TokenType.KEY_WHILE:
+            statement = self.getWhileStatement
+
+    def getWhileStatement(self):
+        token = self.seeNextToken()
+        self.checkToken(token, julia_lexer.TokenType.KEY_WHILE)
+        expr = self.getBooleanExpression()
+        block = Block()
+        block = self.getBlock()
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.KEY_END)
+        return WhileStatement(expr, block)
+
+    def getBooleanExpression(self):
+        op = self.getRelationalOperator()
+        expr1 = self.getArithmeticExpression()
+        expr2 = self.getArithmeticExpression()
 
     def getNextToken(self):
         if not tokens:
@@ -202,9 +229,16 @@ class Parser:
     def seeNextToken(self):
         if not tokens:
             print("No more tokens.")
-            sys.exit(1)
-        token = tokens.pop(0)
-        tokens.insert(0, token)
+            #sys.exit(1)
+        #token = tokens.pop(0)
+        #tokens.insert(0, token)
+        token = tokens[0]
         return token
+
+    def checkToken(self, tok, toktype):
+        assert(tok is not None)
+        assert(toktype is not None)
+        if tok.getTokenType is not toktype:
+            raise ParserException(toktype, 'expected, got' tok, 'instead')
 
 
