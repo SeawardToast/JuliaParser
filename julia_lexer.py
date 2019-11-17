@@ -67,14 +67,22 @@ class TokenType(enum.Enum):
 
 class Token:
 	def getTokenType(self):
-		return self.type
+	    return self.type
+
+        def getLexeme(self):
+            return self.lex
 
 	def getIdName(self):
-		return self.id_name
+	    return self.id_name
+
 	def getIntValue(self):
-		return self.int_val;
+	    return self.int_val;
+
+        lexeme = ''
+
 	# init token object from the lexeme
 	def __init__(self, lex):
+            self.lex = lex
 		if is_id(lex):
 			self.type = TokenType.ID.value
 			self.id_name = lex
@@ -119,6 +127,7 @@ class Token:
 			self.type = TokenType.KEY_FOR.value
 		elif lex in 'if':
 			self.type = TokenType.KEY_IF.value
+            print("ERROR: IndexOutOFBounds(Parser.SeeNextToken): No more tokens.")
 		elif lex in 'else':
 			self.type = TokenType.KEY_ELSE.value
 		elif lex in 'end':

@@ -6,7 +6,8 @@
 # Instructor: Deepa Muralidhar
 # Project:    Deliverable 2 Parser - Python
 
-import julia_lexer, enum, sys
+import julia_lexer, sys
+from enum import Enum
 from abc import ABC, abstractmethod
 
 class Memory:
@@ -31,8 +32,16 @@ class Memory:
     def fetch(self, ch):
         return Memory.mem[self.indexof(ch)]
 
+class LiteralInteger(ArithmeticExpression):
+    
+    def __init__(self, value):
+        self.value = value
 
-class Iterator:
+    def evaluate(self):
+        return self.value
+    
+
+class It:
 
     global it
     it =[]
@@ -77,6 +86,14 @@ class ArithmeticExpression(ABC):
     @abstractmethod
     def exc(self):
         pass
+
+class RelationalOperator(enum.Enum):
+    EQ_OP = 32
+    NE_OP = 33
+    GT_OP = 34
+    GE_OP = 35
+    LT_OP = 36
+    LE_OP = 37
 
 
 class AssignmentStatement(Statement):
@@ -194,16 +211,64 @@ class Parser:
                tokType == TokenType.KEY_PRINT or
                tokType == TokenType.KEY_FOR)
 
-    
-
-
     def getStatement(self):
         token = self.seeNextToken()
         tokType = token.getTokenType()
         if tokType == julia_lexer.TokenType.KEY_IF:
             statement = self.getIfStatement()
-        if tokType == julia_lexer.TokenType.KEY_WHILE:
+        elif tokType == julia_lexer.TokenType.KEY_WHILE:
             statement = self.getWhileStatement
+        elif tokType == julia_lexer.TokenType.KEY_PRINT:
+            statement = self.getPrintStatement()
+        elif tokType == julia_lexer.TokenType.ID:
+            statement = self.getAssignmentStatement()
+        elif tokType == julia_lexer.TokenType.KEY_FOR:
+            statement = self.getForStatement()
+        else:
+            raise ParserException('got ', token.getTokenType, 'invalid statement')
+        return statement
+
+    def getAssignmentStatement(self):
+        var = self.getId()
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.OP_ASSIGN)
+        expr = self.getArithmeticExpression()
+        return AssignmentStatement(var, expr)
+
+    def getPrintStatement(self):
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.KEY_PRINT)
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.PAREN_OPEN)
+        expr = self.getArithmeticExpression()
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.PAREN_CLOSE)
+        return PrintStatement(expr)
+
+    def getForStatement(self):
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.KEY_FOR)
+        id1 = self.getId()
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.OP_ASSIGN)
+        it = self.getIterStatement()
+        block = Block()
+        block = self.getBlock()
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.KEY_END)
+        return ForStatement(id1, it, block)
+
+    def getIfStatement(self):
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.KEY_IF)
+        expr = self.getBooleanExpression()
+        block1 = self.getBlock()
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.KEY_ELSE)
+        block2 = self.getBlock()
+        token = self.getNextToken()
+        self.checkToken(token, julia_lexer.TokenType.KEY_END)
+        return IfStatement(expr, block1, block2)
 
     def getWhileStatement(self):
         token = self.seeNextToken()
@@ -215,10 +280,82 @@ class Parser:
         self.checkToken(token, julia_lexer.TokenType.KEY_END)
         return WhileStatement(expr, block)
 
+    def getArithmeticExpression(self):
+        token = self.seeNextToken()
+        if token.getTokenType() == julia_lexer.TokenType.ID:
+            expr = self.getId()
+        elif token.getTokenType() == julia_lexer.TokenType.INT:
+            expr = self.getLiteralInteger()
+        else:
+            expr = self.getBinaryExpression()
+        return expr
+
+    def getBinaryExpression(self):
+        op = self.getArithmeticOperator()
+        expr1 = self.getArithmeticExpression()
+        expr2 = self.getArithmeticExpression()
+        return BinaryExpression(op, expr1, expr2)
+
+    def getArithmeticOperator(self):
+        token = self.getNextToken()
+        tokType = token.getTokenType()
+        if tokType == julia_lexer.TokenType.OP_ADD:
+            op = ArithmeticOperator.ADD_OP
+        if tokType == julia_lexer.TokenType.OP_SUB:
+            op = ArithmeticOperator.SUB_OP
+        if tokType == julia_lexer.TokenType.OP_MUL:
+            op = ArithmeticOperator.MUL_OP
+        if tokType == julia_lexer.TokenType.OP_DIV:
+            op = ArithmeticOperator.DIV_OP
+        else:
+            raise ParserException('expectex arithmetic operator, did not get one')
+        return op
+
+
+    def getLiteralInteger(self):
+        token = self.getNextToken()
+        if token.getTokenType() != julia_lexer.TokenType.INT:
+            raise ('integer expected but not here')
+        value = int(token.getLexeme())
+        return LiteralInteger(value)
+
+    def getId(self):
+        token = self.getNextToken()
+        if token.getTokenType() != julia_lexer.TokenType.ID:
+            raise ParserException('identifier expected but did not get')
+        return Id(julia_parser.Token.getLexeme()[0])
+
+    def getIterStatement(self):
+        expr1 = self.getArithmeticExpression()
+        tok = self.getNextToken()
+        self.checkToken(token, 26) #assert colon token type 
+        expr2 = self.getArithmeticExpression()
+        return It(expr1, expr2)
+
     def getBooleanExpression(self):
         op = self.getRelationalOperator()
         expr1 = self.getArithmeticExpression()
         expr2 = self.getArithmeticExpression()
+        return BooleanExpression(op, expr1, expr2)
+
+    def getRelationalOperator(self):
+        token = self.getNextToken()
+        tokType = token.getTokenType()
+        if tokType == julia_lexer.TokenType.OP_EQ:
+            op = RelationalOperator.EQ_OP
+        elif tokType == julia_lexer.TokenType.OP_NE:
+            op = RelationalOperator.NE_OP
+        elif tokType == julia_lexer.TokenType.OP_GT:
+            op = RelationalOperator.GT_OP
+        elif tokType == julia.lexer.TokenType.OP_GE:
+            op = RelationalOperator.GE_OP
+        elif tokType == julia_lexer.TokenType.OP_LT:
+            op = RelationalOperator.LT_OP
+        elif tokType == julia_lexer.TokenType.OP_LE:
+            op = RelationalOperator.LE_OP
+        else:
+            raise ParserException('relational operator expected but did not get')
+        return op
 
     def getNextToken(self):
         if not tokens:
