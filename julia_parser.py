@@ -9,6 +9,10 @@
 import julia_lexer, sys, enum
 from abc import ABC, abstractmethod
 
+class ParserException(Exception):
+    pass
+
+
 class Memory:
     mem = [0]*52
     def store(self, ch, value):
@@ -51,6 +55,19 @@ class It:
     def getEnd(self):
         return it[1]
 
+
+class Id(ArithmeticExpression):
+
+    def __init__(self, ch):
+        if not ch.isalpha():
+            raise ValueError('invalid identifier argument')
+
+    def getChar(self):
+        return self.ch
+
+    def evaluate(self):
+        memory = Memory()
+        return memory.fetch(self.ch)
 
 class Block:
     def __init__(self):
