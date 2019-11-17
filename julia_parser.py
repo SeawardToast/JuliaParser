@@ -9,6 +9,47 @@
 import julia_lexer, enum, sys
 from abc import ABC, abstractmethod
 
+class Memory:
+    mem = [0]*52
+    def store(self, ch, value):
+        Memory.mem[self.indexof(ch)] = value
+    def indexof(self, ch):
+        if not ch.isalpha():
+            raise ValueError('identifier argument invalid')
+        if ch.islower(): 
+            intch = ord(ch)      #ord returns unicode integer, A is 65, a is 97
+            a = 'a'
+            ina = ord(a)
+            index = intch - inta
+        else:
+            intbc = ord(ch)
+            ba = 'A'
+            intba = ord(ba)
+            index = 26 + intbc - intba
+        return index
+
+    def fetch(self, ch):
+        return Memory.mem[self.indexof(ch)]
+
+
+class Iterator:
+
+    global it
+    it =[]
+
+    def __init__(self, expr1, expr2):
+        if expr1 is None or expr2 is None:
+            raise ValueError('arithmetic expression argument null')
+        self.expr1 = expr1
+        self.expr2 = expr2
+        it.append(self.expr1)
+        it.append(self.expr2)
+
+    def getBegin(self):
+        return it[0]
+    
+    def getEnd(self):
+        return it[1]
 
 class Block:
     def __init__(self):
@@ -30,12 +71,82 @@ class Statement(ABC):
     def exc(self):
         pass
 
+class AssignmentStatement(Statement):
+
+    def __init__(self, var, expr):
+        if var == None:
+            raise ValueError('ID argument null')
+        if expr == None:
+            raise ValueError('ArithmeticExpression argument null')
+
+        self.var = var
+        self.expr = expr
+
+    def execute(self):
+        memory = Memory()
+        memory.store( self.var.getchar(), self.expr.evaluate())
 
 class ArithmeticExpression(ABC):
     @abstractmethod
     def exc(self):
         pass
 
+class ForStatement(Statement):
+
+    def __init__(self, var, it, block):
+
+        if it is None:
+            raise ValueError('iterator argument is null')
+        if block is None:
+            raise ValueError('block argument is null')
+
+        self.it = it
+        self.var = var
+        self.block = block
+
+        def execute(self):
+            begin = self.it.getBegin().evaluate()
+            end = self.it.getEnd().evaluate()
+            ch = self.var.getchar()
+            memory = Memory()
+            while begin <= end:
+                memory.store(ch, begin)
+                self.block.execute()
+                begin +1
+
+class IfStatement(Statement):
+
+    def __init__(self, expr, blk1, blk2):
+        if expr == None:
+            raise ValueError('boolean expression null')
+
+        if blk1 == None or blk2 = None:
+            raise ValueError('null block argument')
+
+        self.expr = expr
+        self.blk1 = blk1
+        self.blk2 - blk2
+
+
+    def execute(self):
+        if self.expr.evaluate():
+            self.blk1.execute()
+        else:
+            self.blk2.execute()
+
+class WhileStatement(Statement):
+
+    def __init__(self, expr, blk):
+        if expr = None:
+            raise ValueError('boolean expression argument null')
+        if blk = None:
+            raise ValueError('block argument null')
+        self.expr = expr
+        self.blk = blk
+
+    def execute(self):
+        while self.expr.evaluate():
+            self.blk.execute()
 
 class Parser:
     def __init__(self, tokenlist):
