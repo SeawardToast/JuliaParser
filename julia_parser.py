@@ -46,6 +46,7 @@ class It:
             raise ValueError('arithmetic expression argument null')
         self.expr1 = expr1
         self.expr2 = expr2
+        it.clear()
         it.append(self.expr1)
         it.append(self.expr2)
 
@@ -110,6 +111,8 @@ class AssignmentStatement(Statement):
         memory.store( self.var.getChar(), self.expr.evaluate())
 
 
+
+
 class ForStatement(Statement):
 
     def __init__(self, var, it, block):
@@ -123,16 +126,16 @@ class ForStatement(Statement):
         self.var = var
         self.block = block
 
-        def exc(self):
-            print("<ForStatement>")
-            begin = self.it.getBegin().evaluate()
-            end = self.it.getEnd().evaluate()
-            ch = self.var.getchar()
-            memory = Memory()
-            while begin <= end:
-                memory.store(ch, begin)
-                self.block.exc()
-                begin +1
+    def exc(self):
+        print("<ForStatement>")
+        begin = self.it.getBegin().evaluate()
+        end = self.it.getEnd().evaluate()
+        ch = self.var.getChar()
+        memory = Memory()
+        while begin <= end:
+            memory.store(ch, begin)
+            self.block.exc()
+            begin +=1
 
 class IfStatement(Statement):
 
@@ -217,7 +220,7 @@ class BooleanExpression:
         elif self.operation == boolOps.OP_EQ:
             eval = self.exp1.evaluate() == self.exp2.evaluate()
         elif self.operation == boolOps.OP_NE:
-            eval = self.exp1.evaluate() == self.exp2.evaluate()
+            eval = self.exp1.evaluate() != self.exp2.evaluate()
         return eval
 
 
@@ -382,10 +385,9 @@ class Parser:
         token = self.getNextToken()
         tokVal = token.getTokenValue()
         self.checkToken(tokVal, 3)
-        #statement within for loop.
+        #iterration within for loop.
         it = self.getIterStatement()
         #for loop block
-        block = Block()
         block = self.getBlock()
         #checks token for end key.
         token = self.getNextToken()
@@ -477,7 +479,7 @@ class Parser:
         elif tokType == 16:
             op = ArOps.OP_EXP
         else:
-            raise ParserException('expected arithmetic operator, got', self.getSyntax(tokType), ' instead')
+            raise ParserException('expected arithmetic operator, did not get one')
         return op
 
 
@@ -500,7 +502,8 @@ class Parser:
     def getIterStatement(self):
         expr1 = self.getArithmeticExpression()
         tok = self.getNextToken()
-        self.checkToken(tok, 26) #assert colon token type
+        tokVal = tok.getTokenValue()
+        self.checkToken(tokVal, 26) #assert colon token type
         expr2 = self.getArithmeticExpression()
         return It(expr1, expr2)
 
@@ -526,7 +529,7 @@ class Parser:
         elif tokType == 9:
             op = boolOps.OP_NE
         else:
-            raise ParserException('relational operator expected but recieved', self.getSyntax(tokType), 'instead')
+            raise ParserException('relational operator expected but did not get')
         return op
 
     def getNextToken(self):
@@ -544,7 +547,4 @@ class Parser:
         assert(tok is not None)
         assert(toktype is not None)
         if tok is not toktype:
-            raise ParserException(self.getSyntax(toktype), 'expected ', self.getSyntax(tok), 'instead')
-
-    def getSyntax(self, val):
-        return str(julia_lexer.TokenType(val)).split('.')
+            raise ParserException(toktype, 'expected ', tok, 'instead')
