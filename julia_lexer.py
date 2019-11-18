@@ -70,6 +70,8 @@ class TokenType(enum.Enum):
 class Token:
 
     def getTokenType(self):
+        return self.name
+    def getTokenValue(self):
         return self.type
     def getLexeme(self):
         return self.lex
@@ -84,60 +86,87 @@ class Token:
     def __init__(self, lex):
         if is_id(lex):
             self.type = TokenType.ID.value
+            self.name = TokenType.ID
             self.id_name = lex
         elif is_int(lex):
             self.type = TokenType.INT.value
+            self.name = TokenType.INT
             self.int_val = int(lex)
         elif lex in '=':
             self.type = TokenType.OP_ASSIGN.value
+            self.name = TokenType.OP_ASSIGN
         elif lex in '<=':
             self.type = TokenType.OP_LE.value
+            self.name = TokenType.OP_LE
         elif lex in '<':
             self.type = TokenType.OP_LT.value
+            self.name = TokenType.OP_LT
         elif lex in '>=':
             self.type = TokenType.OP_GE.value
+            self.name = TokenType.OP_GE
         elif lex in '>':
             self.type = TokenType.OP_GT.value
+            self.name = TokenType.OP_GT
         elif lex in '==':
             self.type = TokenType.OP_EQ.value
+            self.name = TokenType.OP_EQ
         elif lex in '!=':
             self.type = TokenType.OP_NE.value
+            self.name = TokenType.OP_NE
         elif lex in '+':
             self.type = TokenType.OP_ADD.value
+            self.name = TokenType.OP_ADD
         elif lex in '-':
             self.type = TokenType.OP_SUB.value
+            self.name = TokenType.OP_SUB
         elif lex in '*':
             self.type = TokenType.OP_MUL.value
+            self.name = TokenType.OP_MUL
         elif lex in '/':
             self.type = TokenType.OP_DIV.value
+            self.name = TokenType.OP_DIV
         elif lex in '%':
             self.type = TokenType.OP_MOD.value
+            self.name = TokenType.OP_MOD
         elif lex in '\\':
             self.type = TokenType.OP_INV.value
+            self.name = TokenType.OP_INV
         elif lex in '^':
             self.type = TokenType.OP_EXP.value
+            self.name = TokenType.OP_EXP
         elif lex in 'function':
             self.type = TokenType.KEY_FUNC.value
+            self.name = TokenType.KEY_FUNC
         elif lex in 'print':
             self.type = TokenType.KEY_PRINT.value
+            self.name = TokenType.KEY_PRINT
         elif lex in 'while':
             self.type = TokenType.KEY_WHILE.value
+            self.name = TokenType.KEY_WHILE
         elif lex in 'for':
             self.type = TokenType.KEY_FOR.value
+            self.name = TokenType.KEY_FOR
         elif lex in 'if':
             self.type = TokenType.KEY_IF.value
+            self.name = TokenType.KEY_IF
         elif lex in 'else':
             self.type = TokenType.KEY_ELSE.value
+            self.name = TokenType.KEY_ELSE
         elif lex in 'end':
             self.type = TokenType.KEY_END.value
+            self.name = TokenType.KEY_END
         elif lex in '(':
             self.type = TokenType.PAREN_OPEN.value
+            self.name = TokenType.PAREN_OPEN
         elif lex in ')':
             self.type = TokenType.PAREN_CLOSE.value
+            self.name = TokenType.PAREN_CLOSE
         elif lex in ':':
             self.type = TokenType.COLON.value
+            self.name = TokenType.COLON
         else:
             self.type = TokenType.INVAL.value
+            self.name = TokenType.INVAL
             self.inval_lex = lex
 
     # returns human readable token

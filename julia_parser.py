@@ -285,21 +285,23 @@ class Parser:
     def parse(self):
         token = self.getNextToken()
         #function keyword
-        self.checkToken(token.getTokenType(), 17) #assert method token type
+        self.checkToken(token.getTokenValue(), 17) #assert method token type
         #assert id value possibly
+        token = self.getNextToken()
         functionName = token.getIdName()
         token = self.getNextToken()
-        self.checkToken(token.getTokenType(), 24) #assert open parentheses token type
+        self.checkToken(token.getTokenValue(), 24) #assert open parentheses token type
         token = self.getNextToken()
-        self.checkToken(token.getTokenType(), 25) #assert closed parentheses token type
+        self.checkToken(token.getTokenValue(), 25) #assert closed parentheses token type
 
         block = self.getBlock()
         token = self.getNextToken()
-        self.checkToken(token.getTokenType(), 23) #assert token end type
+        self.checkToken(token.getTokenValue(), 23) #assert token end type
         return Program(block)
 
     def getBlock(self):
         block = Block()
+        print('<Block>')
         token = self.seeNextToken()
         while self.isValidStartOfStatement(token):
             statement = self.getStatement()
@@ -309,7 +311,7 @@ class Parser:
 
     def isValidStartOfStatement(self, token):
         assert (token is not None)
-        tokType = token.getTokenType()
+        tokType = token.getTokenValue()
         return (tokType == 1 or
                 tokType == 21 or
                 tokType == 19 or
@@ -318,19 +320,19 @@ class Parser:
 
     def getStatement(self):
         token = self.seeNextToken()
-        tokType = token.getTokenType()
-        if tokType == julia_lexer.TokenType.KEY_IF:
+        tokType = token.getTokenValue()
+        if tokType == 21:
             statement = self.getIfStatement()
-        elif tokType == julia_lexer.TokenType.KEY_WHILE:
+        elif tokType == 19:
             statement = self.getWhileStatement
-        elif tokType == julia_lexer.TokenType.KEY_PRINT:
+        elif tokType == 18:
             statement = self.getPrintStatement()
-        elif tokType == julia_lexer.TokenType.ID:
+        elif tokType == 1:
             statement = self.getAssignmentStatement()
-        elif tokType == julia_lexer.TokenType.KEY_FOR:
+        elif tokType == 20:
             statement = self.getForStatement()
         else:
-            raise ParserException('got ', token.getTokenType, 'invalid statement')
+            raise ParserException('got ', token, 'invalid statement')
         return statement
 
     def getAssignmentStatement(self):
@@ -387,9 +389,9 @@ class Parser:
 
     def getArithmeticExpression(self):
         token = self.seeNextToken()
-        if token.getTokenType() == julia_lexer.TokenType.ID:
+        if token.getTokenValue() == 1:
             expr = self.getId()
-        elif token.getTokenType() == julia_lexer.TokenType.INT:
+        elif token.getTokenValue() == 2:
             expr = self.getLiteralInteger()
         else:
             expr = self.getBinaryExpression()
@@ -403,15 +405,21 @@ class Parser:
 
     def getArithmeticOperator(self):
         token = self.getNextToken()
-        tokType = token.getTokenType()
-        if tokType == julia_lexer.TokenType.OP_ADD:
+        tokType = token.getTokenValue()
+        if tokType == 10:
             op = ArOps.OP_ADD
-        if tokType == julia_lexer.TokenType.OP_SUB:
+        elif tokType == 11:
             op = ArOps.OP_SUB
-        if tokType == julia_lexer.TokenType.OP_MUL:
+        elif tokType == 12:
             op = ArOps.OP_MUL
-        if tokType == julia_lexer.TokenType.OP_DIV:
+        elif tokType == 13:
             op = ArOps.OP_DIV
+        elif tokType == 14:
+            op = ArOps.OP_MOD
+        elif tokType == 15:
+            op = ArOps.OP_INV
+        elif tokType == 16:
+            op = ArOps.OP_EXP
         else:
             raise ParserException('expectex arithmetic operator, did not get one')
         return op
@@ -419,14 +427,14 @@ class Parser:
 
     def getLiteralInteger(self):
         token = self.getNextToken()
-        if token.getTokenType() != julia_lexer.TokenType.INT:
+        if token.getTokenValue() != 2:
             raise ('integer expected but not here')
-        value = int(token.getLexeme())
+        value = int(token.getIntValue())
         return LiteralInteger(value)
 
     def getId(self):
         token = self.getNextToken()
-        if token.getTokenType() != julia_lexer.TokenType.ID:
+        if token.getTokenValue() != 1:
             raise ParserException('identifier expected but did not get')
         return Id(token.getIdName())
 
@@ -445,19 +453,19 @@ class Parser:
 
     def getRelationalOperator(self):
         token = self.getNextToken()
-        tokType = token.getTokenType()
-        if tokType == julia_lexer.TokenType.OP_EQ:
-            op = boolOps.OP_EQ
-        elif tokType == julia_lexer.TokenType.OP_NE:
-            op = boolOps.OP_NE
-        elif tokType == julia_lexer.TokenType.OP_GT:
-            op = boolOps.OP_GT
-        elif tokType == julia_lexer.TokenType.OP_GE:
-            op = boolOps.OP_GE
-        elif tokType == julia_lexer.TokenType.OP_LT:
-            op = boolOps.OP_LT
-        elif tokType == julia_lexer.TokenType.OP_LE:
+        tokType = token.getTokenValue()
+        if tokType == 4:
             op = boolOps.OP_LE
+        elif tokType == 5:
+            op = boolOps.OP_LT
+        elif tokType == 6:
+            op = boolOps.OP_GE
+        elif tokType == 7:
+            op = boolOps.OP_GT
+        elif tokType == 8:
+            op = boolOps.OP_EQ
+        elif tokType == 9:
+            op = boolOps.OP_NE
         else:
             raise ParserException('relational operator expected but did not get')
         return op
@@ -478,7 +486,7 @@ class Parser:
     def checkToken(self, tok, toktype):
         assert(tok is not None)
         assert(toktype is not None)
-        if tok.getTokenType() is not toktype:
-            raise ParserException(toktype, 'expected ', tok.getTokenType(), 'instead' )
+        if tok is not toktype:
+            raise ParserException(toktype, 'expected ', tok, 'instead' )
 
 
