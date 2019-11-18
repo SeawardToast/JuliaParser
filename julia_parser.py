@@ -65,18 +65,16 @@ class Block:
             print("ERROR: NoStatement Exception: Null statement value in block.")
             sys.exit(1);
         self.statements.append(statement)
-        print('statement added to block')
 
     def exc(self):
         print('<Block>: ')
         for statement in self.statements:
             statement.exc()
-        print('\n')
+
 
 class Statement(ABC):
     @abstractmethod
     def exc(self):
-        print("<Statement>")
         pass
 
 
@@ -490,14 +488,16 @@ class Parser:
         tokVal = token.getTokenValue()
         if tokVal != 2:
             raise ('integer expected but not here', tokVal)
-        value = int(tokVal)
+        value = token.getIntValue()
         return LiteralInteger(value)
 
     def getId(self):
         token = self.getNextToken()
-        if token.getTokenValue() != 1:
+        tokVal = token.getTokenValue()
+        if tokVal != 1:
             raise ParserException('identifier expected but did not get')
-        return Id(token.getIdName())
+        tokName = token.getIdName()
+        return Id(tokName)
 
     def getIterStatement(self):
         expr1 = self.getArithmeticExpression()
