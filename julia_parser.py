@@ -13,6 +13,7 @@ class ParserException(Exception):
     pass
 
 
+
 class Memory:
     mem = [0]*52
     def store(self, ch, value):
@@ -34,7 +35,7 @@ class Memory:
 
     def fetch(self, ch):
         return Memory.mem[self.indexof(ch)]
-    
+
 
 class It:
 
@@ -55,19 +56,6 @@ class It:
     def getEnd(self):
         return it[1]
 
-
-class Id(ArithmeticExpression):
-
-    def __init__(self, ch):
-        if not ch.isalpha():
-            raise ValueError('invalid identifier argument')
-
-    def getChar(self):
-        return self.ch
-
-    def evaluate(self):
-        memory = Memory()
-        return memory.fetch(self.ch)
 
 class Block:
     def __init__(self):
@@ -274,26 +262,40 @@ class Program:
         self.block.exc()
 
 
+class Id(ArithmeticExpression):
+
+    def __init__(self, ch):
+        if not ch.isalpha():
+            raise ValueError('invalid identifier argument')
+
+    def getChar(self):
+        return self.ch
+
+    def evaluate(self):
+        memory = Memory()
+        return memory.fetch(self.ch)
+
+
 class Parser:
     def __init__(self, tokenlist):
         global tokens
         tokens = tokenlist
-        self.size = tokenlist.len()
+        self.size = len(tokenlist)
 
     def parse(self):
         token = self.getNextToken()
         #function keyword
-        checkToken(token.getTokenType(), 17) #assert method token type
+        self.checkToken(token.getTokenType(), 17) #assert method token type
         #assert id value possibly
         functionName = token.getIdName()
         token = self.getNextToken()
-        checkToken(token.getTokenType(), 24) #assert open parentheses token type
+        self.checkToken(token.getTokenType(), 24) #assert open parentheses token type
         token = self.getNextToken()
-        checkToken(token.getTokenType(), 25) #assert closed parentheses token type
+        self.checkToken(token.getTokenType(), 25) #assert closed parentheses token type
 
         block = self.getBlock()
         token = self.getNextToken()
-        checkToken(token.getTokenType(), 23) #assert token end type
+        self.checkToken(token.getTokenType(), 23) #assert token end type
         return Program(block)
 
     def getBlock(self):
@@ -305,14 +307,14 @@ class Parser:
             token = self.seeNextToken()
         return block
 
-   def isValidStartOfStatement(self, token):
-       assert (token is not None)
-       tokType = token.getTokenType()
-       return (tokType == 1 or
-               tokType == 21 or
-               tokType == 19 or
-               tokType == 18 or
-               tokType == 20)
+    def isValidStartOfStatement(self, token):
+        assert (token is not None)
+        tokType = token.getTokenType()
+        return (tokType == 1 or
+                tokType == 21 or
+                tokType == 19 or
+                tokType == 18 or
+                tokType == 20)
 
     def getStatement(self):
         token = self.seeNextToken()
@@ -426,7 +428,7 @@ class Parser:
         token = self.getNextToken()
         if token.getTokenType() != julia_lexer.TokenType.ID:
             raise ParserException('identifier expected but did not get')
-        return Id(julia_parser.Token.getLexeme()[0])
+        return Id(token.getIdName())
 
     def getIterStatement(self):
         expr1 = self.getArithmeticExpression()
@@ -473,12 +475,10 @@ class Parser:
         token = tokens.pop()
         tokens.insert(0, token)
         return token
-
-
     def checkToken(self, tok, toktype):
         assert(tok is not None)
         assert(toktype is not None)
-        if tok.getTokenType is not toktype:
-            raise ParserException(toktype, 'expected, got' tok, 'instead')
+        if tok.getTokenType() is not toktype:
+            raise ParserException(toktype, 'expected ', tok.getTokenType(), 'instead' )
 
 
