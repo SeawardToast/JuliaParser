@@ -16,7 +16,7 @@ class Memory:
     def indexof(self, ch):
         if not ch.isalpha():
             raise ValueError('identifier argument invalid')
-        if ch.islower(): 
+        if ch.islower():
             intch = ord(ch)      #ord returns unicode integer, A is 65, a is 97
             a = 'a'
             ina = ord(a)
@@ -47,9 +47,10 @@ class Iterator:
 
     def getBegin(self):
         return it[0]
-    
+
     def getEnd(self):
         return it[1]
+
 
 class Block:
     def __init__(self):
@@ -57,7 +58,7 @@ class Block:
 
     def add(self, statement):
         if statement is None:
-            print("ERROR: Null value exception in Block class.")
+            print("ERROR: NoStatement Exception: Null statement value in block.")
             sys.exit(1);
         self.statements.append(statement)
 
@@ -70,6 +71,13 @@ class Statement(ABC):
     @abstractmethod
     def exc(self):
         pass
+
+
+class ArithmeticExpression(ABC):
+    @abstractmethod
+    def exc(self):
+        pass
+
 
 class AssignmentStatement(Statement):
 
@@ -86,10 +94,8 @@ class AssignmentStatement(Statement):
         memory = Memory()
         memory.store( self.var.getchar(), self.expr.evaluate())
 
-class ArithmeticExpression(ABC):
-    @abstractmethod
-    def exc(self):
-        pass
+
+
 
 class ForStatement(Statement):
 
@@ -120,7 +126,7 @@ class IfStatement(Statement):
         if expr == None:
             raise ValueError('boolean expression null')
 
-        if blk1 == None or blk2 = None:
+        if blk1 == None or blk2 == None:
             raise ValueError('null block argument')
 
         self.expr = expr
@@ -137,9 +143,9 @@ class IfStatement(Statement):
 class WhileStatement(Statement):
 
     def __init__(self, expr, blk):
-        if expr = None:
+        if expr == None:
             raise ValueError('boolean expression argument null')
-        if blk = None:
+        if blk == None:
             raise ValueError('block argument null')
         self.expr = expr
         self.blk = blk
@@ -152,24 +158,50 @@ class Parser:
     def __init__(self, tokenlist):
         global tokens
         tokens = tokenlist
+        self.size = tokenlist.len()
 
     def parse(self):
-        statement = self.getStatement()
+        token = self.getNextToken()
+        #function keyword
+        if(token.getTokenType()!= 17):
+            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        token = self.getNextToken()
+        #id value
+        if (token.getTokenType() != 1):
+            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        functionName = token.getIdName()
+        token = self.getNextToken()
+        #open par
+        if (token.getTokenType() != 24):
+            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        token = self.getNextToken()
+        #close par
+        if (token.getTokenType() != 25):
+            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        block = self.getBlock()
+        token = self.getNextToken()
+        if (token.getTokenType() != 23):
+            print("ERROR: syntax error on line" + (self.size - tokens.len()))
+        return Program(block)
+
+    def getBlock(self):
+        block = Block()
+        token = self.seeNextToken()
 
     def getStatement(self):
         token = self.seeNextToken()
         if token.getTokenType() == julia_lexer.TokenType.KEY_IF:
             statement = self.getIfStatement()
-        
 
     def getNextToken(self):
         if not tokens:
-            print("ERROR: IndexOutOfBounds. no more tokens.")
+            print("no more tokens.")
             sys.exit(1)
         return tokens.pop(0)
+
     def seeNextToken(self):
         if not tokens:
-            print("ERROR: IndexOutOFBounds(Parser.SeeNextToken): No more tokens.")
+            print("No more tokens.")
             sys.exit(1)
         token = tokens.pop(0)
         tokens.insert(0, token)
