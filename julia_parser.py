@@ -6,8 +6,7 @@
 # Instructor: Deepa Muralidhar
 # Project:    Deliverable 2 Parser - Python
 
-import julia_lexer, sys
-from enum import Enum
+import julia_lexer, sys, enum
 from abc import ABC, abstractmethod
 
 class Memory:
@@ -20,7 +19,7 @@ class Memory:
         if ch.islower():
             intch = ord(ch)      #ord returns unicode integer, A is 65, a is 97
             a = 'a'
-            ina = ord(a)
+            inta = ord(a)
             index = intch - inta
         else:
             intbc = ord(ch)
@@ -31,14 +30,6 @@ class Memory:
 
     def fetch(self, ch):
         return Memory.mem[self.indexof(ch)]
-
-class LiteralInteger(ArithmeticExpression):
-    
-    def __init__(self, value):
-        self.value = value
-
-    def evaluate(self):
-        return self.value
     
 
 class It:
@@ -87,13 +78,14 @@ class ArithmeticExpression(ABC):
     def exc(self):
         pass
 
-class RelationalOperator(enum.Enum):
-    EQ_OP = 32
-    NE_OP = 33
-    GT_OP = 34
-    GE_OP = 35
-    LT_OP = 36
-    LE_OP = 37
+
+class LiteralInteger(ArithmeticExpression):
+
+    def __init__(self, value):
+        self.value = value
+
+    def evaluate(self):
+        return self.value
 
 
 class AssignmentStatement(Statement):
@@ -107,7 +99,7 @@ class AssignmentStatement(Statement):
         self.var = var
         self.expr = expr
 
-    def execute(self):
+    def exc(self):
         memory = Memory()
         memory.store( self.var.getchar(), self.expr.evaluate())
 
@@ -127,14 +119,14 @@ class ForStatement(Statement):
         self.var = var
         self.block = block
 
-        def execute(self):
+        def exc(self):
             begin = self.it.getBegin().evaluate()
             end = self.it.getEnd().evaluate()
             ch = self.var.getchar()
             memory = Memory()
             while begin <= end:
                 memory.store(ch, begin)
-                self.block.execute()
+                self.block.exc()
                 begin +1
 
 class IfStatement(Statement):
@@ -151,11 +143,11 @@ class IfStatement(Statement):
         self.blk2 - blk2
 
 
-    def execute(self):
+    def exc(self):
         if self.expr.evaluate():
-            self.blk1.execute()
+            self.blk1.exc()
         else:
-            self.blk2.execute()
+            self.blk2.exc()
 
 class WhileStatement(Statement):
 
@@ -167,9 +159,103 @@ class WhileStatement(Statement):
         self.expr = expr
         self.blk = blk
 
-    def execute(self):
+    def exc(self):
         while self.expr.evaluate():
-            self.blk.execute()
+            self.blk.exc()
+
+
+class PrintStatement(Statement):
+    def __init__(self, expression):
+        if expression is None:
+            raise ValueError('null arithmetic expression')
+        self.expression = expression
+
+    def exc(self):
+        print(self.expression.evaluate())
+
+
+class boolOps(enum.Enum):
+    OP_LE = 4
+    OP_LT = 5
+    OP_GE = 6
+    OP_GT = 7
+    OP_EQ = 8
+    OP_NE = 9
+
+
+class BooleanExpression:
+    def __init__(self, operation, exp1, exp2):
+        if operation is None:
+            raise ValueError('null relational operator in a boolean expression')
+        if exp1 is None or exp2 is None:
+            raise ValueError('null arithmetic expression in a boolean expression')
+        self.operation = operation
+        self.exp1 = exp1
+        self.exp2 = exp2
+
+    def evaluate(self):
+        if self.operation == boolOps.OP_LE:
+            eval = self.exp1.evaluate() <= self.exp2.evaluate()
+        elif self.operation == boolOps.OP_LT:
+            eval = self.exp1.evaluate() < self.exp2.evaluate()
+        elif self.operation == boolOps.OP_GE:
+            eval = self.exp1.evaluate() >= self.exp2.evaluate()
+        elif self.operation == boolOps.OP_GT:
+            eval = self.exp1.evaluate() > self.exp2.evaluate()
+        elif self.operation == boolOps.OP_EQ:
+            eval = self.exp1.evaluate() == self.exp2.evaluate()
+        elif self.operation == boolOps.OP_NE:
+            eval = self.exp1.evaluate() == self.exp2.evaluate()
+        return eval
+
+
+class ArOps(enum.Enum):
+    OP_ADD = 10
+    OP_SUB = 11
+    OP_MUL = 12
+    OP_DIV = 13
+    OP_MOD = 14
+    OP_INV = 15
+    OP_EXP = 16
+
+
+class BinaryExpression(ArithmeticExpression):
+    def __init__(self, operation, exp1, exp2):
+        if operation is None:
+            raise ValueError('null arithmetic operator in a arithmetic expression')
+        if exp1 is None or exp2 is None:
+            raise ValueError('null arithmetic expression in a arithmetic expression')
+        self.operation = operation
+        self.exp1 = exp1
+        self.exp2 = exp2
+
+    def evaluate(self):
+        eval = 0
+        if self.operations == ArOps.OP_ADD:
+            eval = self.exp1.evaluate() + self.exp2.evaluate()
+        elif self.operations == ArOps.OP_SUB:
+            eval = self.exp1.evaluate() - self.exp2.evaluate()
+        elif self.operations == ArOps.OP_MUL:
+            eval = self.exp1.evaluate() * self.exp2.evaluate()
+        elif self.operations == ArOps.OP_DIV:
+            eval = self.exp1.evaluate() / self.exp2.evaluate()
+        elif self.operations == ArOps.OP_MOD:
+            eval = self.exp1.evaluate() % self.exp2.evaluate()
+        elif self.operations == ArOps.OP_INV:
+            eval = self.exp2.evaluate() / self.exp1.evaluate()
+        elif self.operations == ArOps.OP_EXP:
+            eval = self.exp1.evaluate() ^ self.exp2.evaluate()
+        return eval
+
+class Program:
+    def __init__(self, block):
+        if block == None:
+            raise ValueError('null block argument')
+        self.block = block
+
+    def exc(self):
+        self.block.exc()
+
 
 class Parser:
     def __init__(self, tokenlist):
@@ -180,17 +266,17 @@ class Parser:
     def parse(self):
         token = self.getNextToken()
         #function keyword
-        checkToken(toke.getTokenType, 17) #assert method token type
+        checkToken(token.getTokenType(), 17) #assert method token type
         #assert id value possibly
         functionName = token.getIdName()
         token = self.getNextToken()
-        checkToken(token.getTokenType, 24) #assert open parentheses token type
+        checkToken(token.getTokenType(), 24) #assert open parentheses token type
         token = self.getNextToken()
-        checkToken(token.getTokenType, 25) #assert closed parentheses token type
+        checkToken(token.getTokenType(), 25) #assert closed parentheses token type
 
         block = self.getBlock()
         token = self.getNextToken()
-        checkToken(token.getTokenType, 23) #assert token end type
+        checkToken(token.getTokenType(), 23) #assert token end type
         return Program(block)
 
     def getBlock(self):
@@ -203,13 +289,13 @@ class Parser:
         return block
 
    def isValidStartOfStatement(self, token):
-       assert (tok is not None)
+       assert (token is not None)
        tokType = token.getTokenType()
-       return (tokType == TokenType.ID or
-               tokType == TokenType.KEY_IF or
-               tokType == TokenType.KEY_WHILE or
-               tokType == TokenType.KEY_PRINT or
-               tokType == TokenType.KEY_FOR)
+       return (tokType == 1 or
+               tokType == 21 or
+               tokType == 19 or
+               tokType == 18 or
+               tokType == 20)
 
     def getStatement(self):
         token = self.seeNextToken()
@@ -300,13 +386,13 @@ class Parser:
         token = self.getNextToken()
         tokType = token.getTokenType()
         if tokType == julia_lexer.TokenType.OP_ADD:
-            op = ArithmeticOperator.ADD_OP
+            op = ArOps.OP_ADD
         if tokType == julia_lexer.TokenType.OP_SUB:
-            op = ArithmeticOperator.SUB_OP
+            op = ArOps.OP_SUB
         if tokType == julia_lexer.TokenType.OP_MUL:
-            op = ArithmeticOperator.MUL_OP
+            op = ArOps.OP_MUL
         if tokType == julia_lexer.TokenType.OP_DIV:
-            op = ArithmeticOperator.DIV_OP
+            op = ArOps.OP_DIV
         else:
             raise ParserException('expectex arithmetic operator, did not get one')
         return op
@@ -328,7 +414,7 @@ class Parser:
     def getIterStatement(self):
         expr1 = self.getArithmeticExpression()
         tok = self.getNextToken()
-        self.checkToken(token, 26) #assert colon token type 
+        self.checkToken(tok, 26) #assert colon token type
         expr2 = self.getArithmeticExpression()
         return It(expr1, expr2)
 
@@ -342,17 +428,17 @@ class Parser:
         token = self.getNextToken()
         tokType = token.getTokenType()
         if tokType == julia_lexer.TokenType.OP_EQ:
-            op = RelationalOperator.EQ_OP
+            op = boolOps.OP_EQ
         elif tokType == julia_lexer.TokenType.OP_NE:
-            op = RelationalOperator.NE_OP
+            op = boolOps.OP_NE
         elif tokType == julia_lexer.TokenType.OP_GT:
-            op = RelationalOperator.GT_OP
-        elif tokType == julia.lexer.TokenType.OP_GE:
-            op = RelationalOperator.GE_OP
+            op = boolOps.OP_GT
+        elif tokType == julia_lexer.TokenType.OP_GE:
+            op = boolOps.OP_GE
         elif tokType == julia_lexer.TokenType.OP_LT:
-            op = RelationalOperator.LT_OP
+            op = boolOps.OP_LT
         elif tokType == julia_lexer.TokenType.OP_LE:
-            op = RelationalOperator.LE_OP
+            op = boolOps.OP_LE
         else:
             raise ParserException('relational operator expected but did not get')
         return op
@@ -366,11 +452,11 @@ class Parser:
     def seeNextToken(self):
         if not tokens:
             print("No more tokens.")
-            #sys.exit(1)
-        #token = tokens.pop(0)
-        #tokens.insert(0, token)
-        token = tokens[0]
+            sys.exit(1)
+        token = tokens.pop()
+        tokens.insert(0, token)
         return token
+
 
     def checkToken(self, tok, toktype):
         assert(tok is not None)

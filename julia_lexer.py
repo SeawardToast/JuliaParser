@@ -61,6 +61,8 @@ class TokenType(enum.Enum):
 	PAREN_CLOSE = 25
 	COLON       = 26
 
+	def getId(self):
+		self.value
 	# returns the name of the enum constant
 	def __str__(self):
 		return self.name
@@ -82,7 +84,6 @@ class Token:
 
 	# init token object from the lexeme
 	def __init__(self, lex):
-            self.lex = lex
 		if is_id(lex):
 			self.type = TokenType.ID.value
 			self.id_name = lex
@@ -127,7 +128,6 @@ class Token:
 			self.type = TokenType.KEY_FOR.value
 		elif lex in 'if':
 			self.type = TokenType.KEY_IF.value
-            print("ERROR: IndexOutOFBounds(Parser.SeeNextToken): No more tokens.")
 		elif lex in 'else':
 			self.type = TokenType.KEY_ELSE.value
 		elif lex in 'end':
