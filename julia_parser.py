@@ -110,8 +110,6 @@ class AssignmentStatement(Statement):
         memory.store( self.var.getChar(), self.expr.evaluate())
 
 
-
-
 class ForStatement(Statement):
 
     def __init__(self, var, it, block):
@@ -479,7 +477,7 @@ class Parser:
         elif tokType == 16:
             op = ArOps.OP_EXP
         else:
-            raise ParserException('expected arithmetic operator, did not get one')
+            raise ParserException('expected arithmetic operator, got', self.getSyntax(tokType), ' instead')
         return op
 
 
@@ -528,7 +526,7 @@ class Parser:
         elif tokType == 9:
             op = boolOps.OP_NE
         else:
-            raise ParserException('relational operator expected but did not get')
+            raise ParserException('relational operator expected but recieved', self.getSyntax(tokType), 'instead')
         return op
 
     def getNextToken(self):
@@ -546,4 +544,7 @@ class Parser:
         assert(tok is not None)
         assert(toktype is not None)
         if tok is not toktype:
-            raise ParserException(toktype, 'expected ', tok, 'instead')
+            raise ParserException(self.getSyntax(toktype), 'expected ', self.getSyntax(tok), 'instead')
+
+    def getSyntax(self, val):
+        return str(julia_lexer.TokenType(val)).split('.')
