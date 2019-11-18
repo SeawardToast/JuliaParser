@@ -13,7 +13,6 @@ class ParserException(Exception):
     pass
 
 
-
 class Memory:
     mem = [0]*52
     def store(self, ch, value):
@@ -66,21 +65,24 @@ class Block:
             print("ERROR: NoStatement Exception: Null statement value in block.")
             sys.exit(1);
         self.statements.append(statement)
+        print('statement added to block')
 
     def exc(self):
+        print('<Block>: ')
         for statement in self.statements:
             statement.exc()
-
+        print('\n')
 
 class Statement(ABC):
     @abstractmethod
     def exc(self):
+        print("<Statement>")
         pass
 
 
 class ArithmeticExpression(ABC):
     @abstractmethod
-    def exc(self):
+    def evaluate(self):
         pass
 
 
@@ -105,8 +107,9 @@ class AssignmentStatement(Statement):
         self.expr = expr
 
     def exc(self):
+        print("<AssignmentStatement>")
         memory = Memory()
-        memory.store( self.var.getchar(), self.expr.evaluate())
+        memory.store( self.var.getChar(), self.expr.evaluate())
 
 
 
@@ -125,6 +128,7 @@ class ForStatement(Statement):
         self.block = block
 
         def exc(self):
+            print("<ForStatement>")
             begin = self.it.getBegin().evaluate()
             end = self.it.getEnd().evaluate()
             ch = self.var.getchar()
@@ -140,15 +144,19 @@ class IfStatement(Statement):
         if expr == None:
             raise ValueError('boolean expression null')
 
-        if blk1 == None or blk2 == None:
+        if blk1 == None:
             raise ValueError('null block argument')
 
-        self.expr = expr
-        self.blk1 = blk1
-        self.blk2 - blk2
-
+        if blk2 != None:
+            self.expr = expr
+            self.blk1 = blk1
+            self.blk2 = blk2
+        else:
+            self.expr = expr
+            self.blk1 = blk1
 
     def exc(self):
+        print("<IfStatement>")
         if self.expr.evaluate():
             self.blk1.exc()
         else:
@@ -165,6 +173,7 @@ class WhileStatement(Statement):
         self.blk = blk
 
     def exc(self):
+        print("<WhileStatement>")
         while self.expr.evaluate():
             self.blk.exc()
 
@@ -176,6 +185,7 @@ class PrintStatement(Statement):
         self.expression = expression
 
     def exc(self):
+        print("<PrintStatement>")
         print(self.expression.evaluate())
 
 
@@ -199,6 +209,7 @@ class BooleanExpression:
         self.exp2 = exp2
 
     def evaluate(self):
+        print("<BooleanExpression>")
         if self.operation == boolOps.OP_LE:
             eval = self.exp1.evaluate() <= self.exp2.evaluate()
         elif self.operation == boolOps.OP_LT:
@@ -235,20 +246,21 @@ class BinaryExpression(ArithmeticExpression):
         self.exp2 = exp2
 
     def evaluate(self):
+        print("<BinaryExpression>")
         eval = 0
-        if self.operations == ArOps.OP_ADD:
+        if self.operation == ArOps.OP_ADD:
             eval = self.exp1.evaluate() + self.exp2.evaluate()
-        elif self.operations == ArOps.OP_SUB:
+        elif self.operation == ArOps.OP_SUB:
             eval = self.exp1.evaluate() - self.exp2.evaluate()
-        elif self.operations == ArOps.OP_MUL:
+        elif self.operation == ArOps.OP_MUL:
             eval = self.exp1.evaluate() * self.exp2.evaluate()
-        elif self.operations == ArOps.OP_DIV:
+        elif self.operation == ArOps.OP_DIV:
             eval = self.exp1.evaluate() / self.exp2.evaluate()
-        elif self.operations == ArOps.OP_MOD:
+        elif self.operation == ArOps.OP_MOD:
             eval = self.exp1.evaluate() % self.exp2.evaluate()
-        elif self.operations == ArOps.OP_INV:
+        elif self.operation == ArOps.OP_INV:
             eval = self.exp2.evaluate() / self.exp1.evaluate()
-        elif self.operations == ArOps.OP_EXP:
+        elif self.operation == ArOps.OP_EXP:
             eval = self.exp1.evaluate() ^ self.exp2.evaluate()
         return eval
 
@@ -259,7 +271,9 @@ class Program:
         self.block = block
 
     def exc(self):
+        print('<Program>: ')
         self.block.exc()
+        print('\n')
 
 
 class Id(ArithmeticExpression):
@@ -267,6 +281,7 @@ class Id(ArithmeticExpression):
     def __init__(self, ch):
         if not ch.isalpha():
             raise ValueError('invalid identifier argument')
+        self.ch = ch
 
     def getChar(self):
         return self.ch
@@ -301,7 +316,6 @@ class Parser:
 
     def getBlock(self):
         block = Block()
-        print('<Block>')
         token = self.seeNextToken()
         while self.isValidStartOfStatement(token):
             statement = self.getStatement()
@@ -338,64 +352,110 @@ class Parser:
     def getAssignmentStatement(self):
         var = self.getId()
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.OP_ASSIGN)
+        tokValue = token.getTokenValue()
+        self.checkToken(tokValue, 3)
         expr = self.getArithmeticExpression()
         return AssignmentStatement(var, expr)
 
     def getPrintStatement(self):
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.KEY_PRINT)
+        #Checks to see if the token is the print key.
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 18)
+        #Checks to see if the token is an open parenthesis.
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.PAREN_OPEN)
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 24)
+        #ArithmeticExpression because minimal form of julia contains only integers.
         expr = self.getArithmeticExpression()
+        #Checks to see if the token is a close parenthesis.
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.PAREN_CLOSE)
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 25)
+
         return PrintStatement(expr)
 
     def getForStatement(self):
+        #Makes sure the token is the for key.
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.KEY_FOR)
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 20)
+
         id1 = self.getId()
+        #checks token for assign operator.
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.OP_ASSIGN)
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 3)
+        #statement within for loop.
         it = self.getIterStatement()
+        #for loop block
         block = Block()
         block = self.getBlock()
+        #checks token for end key.
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.KEY_END)
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 23)
         return ForStatement(id1, it, block)
 
     def getIfStatement(self):
+        #checks token for if key.
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.KEY_IF)
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 21)
+        #if expression.
         expr = self.getBooleanExpression()
+        #if loop block
         block1 = self.getBlock()
+        #checks token for else key.
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.KEY_ELSE)
-        block2 = self.getBlock()
-        token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.KEY_END)
+        tokVal = token.getTokenValue()
+        if tokVal == 22:
+            #else loop block
+            block2 = self.getBlock()
+            token = self.getNextToken()
+            tokVal = token.getTokenValue()
+            self.checkToken(tokVal, 23)
+        else:
+            self.checkToken(tokVal, 23)
+            block2 = None
         return IfStatement(expr, block1, block2)
 
     def getWhileStatement(self):
+        #checks for while key.
         token = self.seeNextToken()
-        self.checkToken(token, julia_lexer.TokenType.KEY_WHILE)
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 19)
+        #gets while expression.
         expr = self.getBooleanExpression()
-        block = Block()
+        #gets while loop block.
         block = self.getBlock()
+        #checks for end of while loop
         token = self.getNextToken()
-        self.checkToken(token, julia_lexer.TokenType.KEY_END)
+        tokVal = token.getTokenValue()
+        self.checkToken(tokVal, 23)
         return WhileStatement(expr, block)
 
     def getArithmeticExpression(self):
         token = self.seeNextToken()
-        if token.getTokenValue() == 1:
+        tokVal = token.getTokenValue()
+        if tokVal == 1:
             expr = self.getId()
-        elif token.getTokenValue() == 2:
+        elif tokVal == 2:
             expr = self.getLiteralInteger()
         else:
             expr = self.getBinaryExpression()
         return expr
+
+    def isArithmeticOperator(self, b):
+        assert (b is not None)
+        tokType = b.getTokenValue()
+        return (tokType == 10 or
+                tokType == 11 or
+                tokType == 12 or
+                tokType == 13 or
+                tokType == 14 or
+                tokType == 15 or
+                tokType == 16)
 
     def getBinaryExpression(self):
         op = self.getArithmeticOperator()
@@ -421,15 +481,16 @@ class Parser:
         elif tokType == 16:
             op = ArOps.OP_EXP
         else:
-            raise ParserException('expectex arithmetic operator, did not get one')
+            raise ParserException('expected arithmetic operator, did not get one')
         return op
 
 
     def getLiteralInteger(self):
         token = self.getNextToken()
-        if token.getTokenValue() != 2:
-            raise ('integer expected but not here')
-        value = int(token.getIntValue())
+        tokVal = token.getTokenValue()
+        if tokVal != 2:
+            raise ('integer expected but not here', tokVal)
+        value = int(tokVal)
         return LiteralInteger(value)
 
     def getId(self):
@@ -480,13 +541,9 @@ class Parser:
         if not tokens:
             print("No more tokens.")
             sys.exit(1)
-        token = tokens.pop()
-        tokens.insert(0, token)
-        return token
+        return tokens[0]
     def checkToken(self, tok, toktype):
         assert(tok is not None)
         assert(toktype is not None)
         if tok is not toktype:
-            raise ParserException(toktype, 'expected ', tok, 'instead' )
-
-
+            raise ParserException(toktype, 'expected ', tok, 'instead')
