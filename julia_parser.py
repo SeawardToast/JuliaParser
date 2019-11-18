@@ -106,7 +106,7 @@ class AssignmentStatement(Statement):
         self.expr = expr
 
     def exc(self):
-        print("<AssignmentStatement>")
+        print("<AssignmentStatement> ->", self.expr)
         memory = Memory()
         memory.store( self.var.getChar(), self.expr.evaluate())
 
@@ -155,7 +155,7 @@ class IfStatement(Statement):
             self.blk1 = blk1
 
     def exc(self):
-        print("<IfStatement>")
+        print("<If Statement> -> if <boolean_expression> then <block> else <block>", )
         if self.expr.evaluate():
             self.blk1.exc()
         else:
